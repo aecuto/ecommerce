@@ -4,6 +4,7 @@ import {
   Body,
   UnauthorizedException,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
@@ -15,6 +16,7 @@ import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/user/entities/user.entity';
+import { Response } from 'express';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -38,7 +40,10 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() payload: AuthDto) {
+  async login(
+    @Body() payload: AuthDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const user = await this.userService.findOneBy({
       username: payload.username,
     });
@@ -49,12 +54,17 @@ export class AuthController {
       throw new UnauthorizedException('Incorrect password');
     }
 
-    return this.getToken(user);
+    const token = this.getToken(user);
+    response.cookie('token', token);
+
+    return token;
   }
 
   @Post('logout')
-  logout() {
-    return this.authService.findAll();
+  logout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie('token');
+
+    return { msg: 'logout successfully!' };
   }
 
   async getToken(user: UserEntity) {

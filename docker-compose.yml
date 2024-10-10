@@ -1,0 +1,33 @@
+name: ecommerce
+
+services:
+  apis:
+    image: aecutox/ecommerce-apis
+    env_file: '.env-docker'
+    ports:
+      - 5000:3000
+  db:
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128M
+    environment:
+      POSTGRES_PASSWORD: password!1
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  pgdata:
