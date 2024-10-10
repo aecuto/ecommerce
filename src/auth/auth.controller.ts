@@ -1,34 +1,72 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { AuthDto } from './dto/auth.dto';
+
+import { ApiTags } from '@nestjs/swagger';
+import { UserService } from 'src/user/user.service';
+
+import * as argon2 from 'argon2';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { UserEntity } from 'src/user/entities/user.entity';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private userService: UserService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+  ) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('register')
+  async register(@Body() payload: AuthDto) {
+    const user = await this.userService.findOneBy({
+      username: payload.username,
+    });
+    if (user) throw new BadRequestException('User exists!');
+
+    const hash = await argon2.hash(payload.password);
+    return this.userService.save({ ...payload, password: hash });
   }
 
-  @Get()
-  findAll() {
+  @Post('login')
+  async login(@Body() payload: AuthDto) {
+    const user = await this.userService.findOneBy({
+      username: payload.username,
+    });
+    if (!user) throw new UnauthorizedException('User does not exist');
+
+    const verify = await argon2.verify(user.password, payload.password);
+    if (!verify) {
+      throw new UnauthorizedException('Incorrect password');
+    }
+
+    return this.getToken(user);
+  }
+
+  @Post('logout')
+  logout() {
     return this.authService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  async getToken(user: UserEntity) {
+    return this.jwtService.signAsync(
+      {
+        sub: user.id,
+      },
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn:
+          this.configService.get<string>('JWT_ACCESS_SECRET_EXPIRY') || '15m',
+      },
+    );
   }
 }

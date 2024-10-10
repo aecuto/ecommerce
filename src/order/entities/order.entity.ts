@@ -21,8 +21,8 @@ export class OrderEntity {
   @UpdateDateColumn()
   updated_at?: Date;
 
-  @OneToMany(() => OrderItemEntity, (data) => data.id)
-  @ApiProperty()
+  @OneToMany(() => OrderItemEntity, (data) => data.order)
+  @ApiProperty({ type: OrderItemEntity, isArray: true })
   items: OrderItemEntity[];
 
   @ManyToOne(() => UserEntity, (user) => user.id)

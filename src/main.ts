@@ -6,13 +6,22 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
+
+  const title = 'eccomerce apis';
   const config = new DocumentBuilder()
-    .setTitle('Ecommerce')
-    .setDescription('The Ecommerces API description')
-    .setVersion('1.0')
+    .setTitle(title)
+    .setVersion(`1.0`)
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  const options = {
+    customSiteTitle: title,
+    swaggerOptions: {
+      persistAuthorization: true,
+      filter: true,
+    },
+  };
+  SwaggerModule.setup('api', app, document, options);
 
   await app.listen(3000);
 }

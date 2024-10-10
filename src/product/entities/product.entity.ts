@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { UserEntity } from 'src/user/entities/user.entity';
 import {
   Column,
@@ -23,15 +23,15 @@ export class ProductEntity {
 
   @ApiProperty()
   @Column()
-  @IsNotEmpty()
   @IsString()
+  @IsOptional()
   name: string;
 
   @ApiProperty()
-  @Column()
-  @IsNotEmpty()
-  @IsString()
-  price: string;
+  @Column({ default: 0 })
+  @IsNumber()
+  @IsOptional()
+  price: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   user: UserEntity;

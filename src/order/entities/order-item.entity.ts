@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber } from 'class-validator';
 import { OrderEntity } from 'src/order/entities/order.entity';
 import {
   Column,
@@ -21,6 +21,9 @@ export class OrderItemEntity {
   @UpdateDateColumn()
   updated_at?: Date;
 
+  @ApiProperty()
+  product_id: string;
+
   @Column()
   @IsNumber()
   @ApiProperty()
@@ -32,8 +35,6 @@ export class OrderItemEntity {
   price: number;
 
   @Column()
-  @IsString()
-  @ApiProperty()
   name: string;
 
   @ManyToOne(() => OrderEntity, (data) => data.id)
